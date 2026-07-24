@@ -1,4 +1,5 @@
 import io
+import os
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -10,7 +11,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     HRFlowable,
-    Image,
+    Image as RLImage,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -28,20 +29,44 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("⚙️ Evaluación de Fuga de Asiento - Válvulas de Control")
-st.markdown("Evaluación de hermeticidad según norma **ANSI / FCI 70-2 (IEC 60534-4)**")
+# --- ARCHIVO DE LOGO FIJO Y AUTORÍA ---
+LOGO_FILE = "logo.png"  # Busca automáticamente la imagen subida a GitHub
+DESARROLLADOR_APP = "Ing. Richard Villegas"  # Tu nombre o el de tu empresa
+
+st.sidebar.header("ℹ️ Información del Sistema")
+st.sidebar.markdown(f"**Desarrollado por:**\n{DESARROLLADOR_APP}")
+st.sidebar.divider()
+st.sidebar.caption("Norma aplicable: **ANSI / FCI 70-2 (IEC 60534-4)**")
+
+
+# --- 1. ENCABEZADO DE LA PÁGINA WEB ---
+col_head1, col_head2 = st.columns([3, 1])
+
+with col_head1:
+    st.title("⚙️ Evaluación de Fuga de Asiento")
+    st.markdown(
+        "Evaluación de hermeticidad en válvulas de control según norma **ANSI / FCI 70-2**"
+    )
+
+with col_head2:
+    if os.path.exists(LOGO_FILE):
+        st.image(LOGO_FILE, use_container_width=True)
+
 st.divider()
 
-# --- 1. INTERFAZ DE ENTRADA (COLUMNAS) ---
+# --- 2. INTERFAZ DE ENTRADA (COLUMNAS) ---
 col_left, col_right = st.columns(2)
 
 with col_left:
-    st.subheader("📋 Datos del Equipo y Prueba")
+    st.subheader("📋 Datos del Equipo y Personal")
     tag_valvula = st.text_input("TAG de la Válvula", value="FCV-101")
     planta_area = st.text_input(
         "Ubicación / Área", value="Planta Principal - Área 200"
     )
     tecnico_responsable = st.text_input("Técnico Inspector", value="Ing. Juan Pérez")
+    supervisor_responsable = st.text_input(
+        "Aprobado / Revisado por", value="Ing. Carlos Mendoza"
+    )
 
 with col_right:
     st.subheader("🔧 Especificaciones y Lectura")
@@ -73,7 +98,7 @@ with col_right:
 
 st.divider()
 
-# --- 2. CÁLCULOS TÉCNICOS ---
+# --- 3. CÁLCULOS TÉCNICOS ---
 if unidad_medida == "l/min":
     fuga_medida_sfh = fuga_medida * 2.11888
 elif unidad_medida == "m3/h":
@@ -117,7 +142,7 @@ porcentaje_usado = (fuga_medida_sfh / max_fuga_sfh) * 100
 estado_texto = "APROBADO" if aprobado else "RECHAZADO"
 color_hex = "#16a34a" if aprobado else "#dc2626"
 
-# --- 3. MOSTRAR RESULTADOS EN PANTALLA ---
+# --- 4. MOSTRAR RESULTADOS EN PANTALLA ---
 if aprobado:
     st.success(
         f"### RESULTADO: APROBADO ✅\nLa fuga medida representa el **{porcentaje_usado:.2f}%** del límite permitido."
@@ -132,7 +157,7 @@ kpi1.metric("Fuga Medida", f"{fuga_medida:.3f} {unidad_medida}")
 kpi2.metric("Límite Permitido", f"{max_fuga_usuario:.3f} {unidad_medida}")
 kpi3.metric("Nivel respecto al Límite", f"{porcentaje_usado:.2f} %")
 
-# --- 4. GENERACIÓN DEL GRÁFICO (EN MEMORIA) ---
+# --- 5. GENERACIÓN DEL GRÁFICO (EN MEMORIA) ---
 fig, ax = plt.subplots(figsize=(7, 3.2), dpi=150)
 barras = ["Fuga Medida", "Límite Máximo"]
 valores = [fuga_medida, max_fuga_usuario]
@@ -178,16 +203,14 @@ if 0 < fuga_medida < (max_fuga_usuario * 0.05):
 
 plt.tight_layout()
 
-# Mostrar gráfico en la web
 st.pyplot(fig)
 
-# Guardar gráfico en memoria RAM para el PDF
 img_buf = io.BytesIO()
 fig.savefig(img_buf, format="png", dpi=200)
 img_buf.seek(0)
 
 
-# --- 5. FUNCIÓN PARA GENERAR EL PDF EN MEMORIA ---
+# --- 6. FUNCIÓN PARA GENERAR EL PDF EN MEMORIA ---
 def generar_pdf_bytes():
     pdf_buf = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -203,18 +226,18 @@ def generar_pdf_bytes():
     title_style = ParagraphStyle(
         "T",
         parent=styles["Heading1"],
-        fontSize=15,
+        fontSize=14,
         textColor=colors.HexColor("#0f172a"),
-        alignment=1,
-        spaceAfter=4,
+        alignment=0,
+        spaceAfter=2,
     )
     sub_style = ParagraphStyle(
         "S",
         parent=styles["Normal"],
-        fontSize=9,
+        fontSize=8,
         textColor=colors.HexColor("#475569"),
-        alignment=1,
-        spaceAfter=10,
+        alignment=0,
+        spaceAfter=4,
     )
     cell_b = ParagraphStyle(
         "CB",
@@ -230,38 +253,62 @@ def generar_pdf_bytes():
         textColor=colors.HexColor("#1e293b"),
     )
     cell_c = ParagraphStyle(
-        "CC", parent=styles["Normal"], fontSize=9, alignment=1
+        "CC", parent=styles["Normal"], fontSize=8, alignment=1
     )
     res_style = ParagraphStyle(
         "R",
         parent=styles["Normal"],
-        fontSize=13,
+        fontSize=12,
         fontName="Helvetica-Bold",
         textColor=colors.white,
         alignment=1,
     )
+    footer_style = ParagraphStyle(
+        "FS",
+        parent=styles["Normal"],
+        fontSize=7,
+        textColor=colors.HexColor("#64748b"),
+        alignment=1,
+    )
 
     elements = []
-    elements.append(
+
+    # ENCABEZADO CON LOGO Y TÍTULO
+    titulos_header = [
         Paragraph(
             "<b>INFORME TÉCNICO DE PRUEBA DE FUGA EN ASIENTO</b>", title_style
-        )
-    )
-    elements.append(
+        ),
         Paragraph(
             "Evaluación de Hermeticidad según Norma ANSI / FCI 70-2 (IEC 60534-4)",
             sub_style,
+        ),
+    ]
+
+    if os.path.exists(LOGO_FILE):
+        rl_logo = RLImage(LOGO_FILE, width=1.5 * inch, height=0.6 * inch)
+        data_head = [[titulos_header, rl_logo]]
+        t_head = Table(data_head, colWidths=[5.3 * inch, 1.7 * inch])
+        t_head.setStyle(
+            TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+            ])
         )
-    )
+        elements.append(t_head)
+    else:
+        elements.extend(titulos_header)
+
+    elements.append(Spacer(1, 4))
     elements.append(
         HRFlowable(
             width="100%",
             thickness=1.5,
             color=colors.HexColor("#0f172a"),
-            spaceAfter=10,
+            spaceAfter=8,
         )
     )
 
+    # DATOS DE CABECERA
     fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
     data_info = [
         [
@@ -289,8 +336,9 @@ def generar_pdf_bytes():
         ])
     )
     elements.append(t_info)
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 6))
 
+    # BLOQUE DE RESULTADO
     data_res = [[
         Paragraph(
             f"<b>RESULTADO DE EVALUACIÓN: {estado_texto}</b>", res_style
@@ -301,13 +349,14 @@ def generar_pdf_bytes():
         TableStyle([
             ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(color_hex)),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
         ])
     )
     elements.append(t_res)
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 6))
 
+    # TABLA DE PARÁMETROS
     data_param = [
         [
             Paragraph("<b>Parámetro</b>", cell_b),
@@ -360,33 +409,57 @@ def generar_pdf_bytes():
         ])
     )
     elements.append(t_param)
+    elements.append(Spacer(1, 6))
+
+    # ADJUNTAR GRÁFICA
+    elements.append(
+        RLImage(img_buf, width=6.5 * inch, height=2.8 * inch)
+    )
     elements.append(Spacer(1, 8))
 
-    elements.append(Image(img_buf, width=6.5 * inch, height=3.0 * inch))
-    elements.append(Spacer(1, 10))
-
+    # BLOQUE DE FIRMAS
     data_firmas = [[
         Paragraph(
             f"__________________________________<br/><b>{tecnico_responsable}</b><br/>Inspector Técnico",
             cell_c,
         ),
         Paragraph(
-            "__________________________________<br/><b>Supervisor de Calidad</b><br/>Aprobado / Revisado",
+            f"__________________________________<br/><b>{supervisor_responsable}</b><br/>Aprobado y revisado",
             cell_c,
         ),
     ]]
     t_firmas = Table(data_firmas, colWidths=[3.5 * inch, 3.5 * inch])
     t_firmas.setStyle(
-        TableStyle([("ALIGN", (0, 0), (-1, -1), "CENTER"), ("TOPPADDING", (0, 0), (-1, -1), 8)])
+        TableStyle([
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ])
     )
     elements.append(t_firmas)
+    elements.append(Spacer(1, 10))
+
+    # PIE DE PÁGINA (CRÉDITO DE AUTORÍA)
+    elements.append(
+        HRFlowable(
+            width="100%",
+            thickness=0.5,
+            color=colors.HexColor("#cbd5e1"),
+            spaceAfter=4,
+        )
+    )
+    elements.append(
+        Paragraph(
+            f"Sistema de Evaluación de Válvulas | Desarrollado por: <b>{DESARROLLADOR_APP}</b>",
+            footer_style,
+        )
+    )
 
     doc.build(elements)
     pdf_buf.seek(0)
     return pdf_buf
 
 
-# --- 6. BOTÓN DE DESCARGA DEL PDF EN STREAMLIT ---
+# --- 7. BOTÓN DE DESCARGA ---
 pdf_data = generar_pdf_bytes()
 
 st.download_button(

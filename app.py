@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+from PIL import Image as PILImage
 
 # Librerías para el reporte PDF
 from reportlab.lib import colors
@@ -24,7 +25,7 @@ import streamlit as st
 
 # Configuración de página Web
 st.set_page_config(
-    page_title="Evaluación de Fuga de Válvulas",
+    page_title="Protocolo de Hermeticidad de Válvulas",
     page_icon="⚙️",
     layout="wide",
 )
@@ -43,9 +44,9 @@ st.sidebar.caption("Norma aplicable: **ANSI / FCI 70-2 (IEC 60534-4)**")
 col_head1, col_head2 = st.columns([3, 1])
 
 with col_head1:
-    st.title("⚙️ Evaluación de Fuga de Asiento")
+    st.title("⚙️ Protocolo de Prueba de Hermeticidad")
     st.markdown(
-        "Evaluación de hermeticidad en válvulas de control según norma **ANSI / FCI 70-2**"
+        "Evaluación de fuga en asiento para válvulas de control según norma **ANSI / FCI 70-2**"
     )
 
 with col_head2:
@@ -226,7 +227,7 @@ def generar_pdf_bytes():
     title_style = ParagraphStyle(
         "T",
         parent=styles["Heading1"],
-        fontSize=14,
+        fontSize=13,
         textColor=colors.HexColor("#0f172a"),
         alignment=0,
         spaceAfter=2,
@@ -276,7 +277,7 @@ def generar_pdf_bytes():
     # ENCABEZADO CON LOGO Y TÍTULO
     titulos_header = [
         Paragraph(
-            "<b>INFORME TÉCNICO DE PRUEBA DE FUGA EN ASIENTO</b>", title_style
+            "<b>PROTOCOLO DE PRUEBA DE HERMETICIDAD DE ASIENTO</b>", title_style
         ),
         Paragraph(
             "Evaluación de Hermeticidad según Norma ANSI / FCI 70-2 (IEC 60534-4)",
@@ -285,9 +286,26 @@ def generar_pdf_bytes():
     ]
 
     if os.path.exists(LOGO_FILE):
-        rl_logo = RLImage(LOGO_FILE, width=1.5 * inch, height=0.6 * inch)
+        try:
+            # Cálculo automático de escala manteniendo aspecto original
+            with PILImage.open(LOGO_FILE) as img:
+                orig_w, orig_h = img.size
+                aspect = orig_h / orig_w
+
+            target_w = 1.8 * inch
+            target_h = target_w * aspect
+
+            # Si excede el alto máximo del header, ajustamos por altura
+            if target_h > 0.75 * inch:
+                target_h = 0.75 * inch
+                target_w = target_h / aspect
+
+            rl_logo = RLImage(LOGO_FILE, width=target_w, height=target_h)
+        except Exception:
+            rl_logo = RLImage(LOGO_FILE, width=1.5 * inch, height=0.6 * inch)
+
         data_head = [[titulos_header, rl_logo]]
-        t_head = Table(data_head, colWidths=[5.3 * inch, 1.7 * inch])
+        t_head = Table(data_head, colWidths=[5.1 * inch, 1.9 * inch])
         t_head.setStyle(
             TableStyle([
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),

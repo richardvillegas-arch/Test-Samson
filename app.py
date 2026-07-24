@@ -32,7 +32,7 @@ st.set_page_config(
 
 # --- ARCHIVO DE LOGO FIJO Y AUTORÍA ---
 LOGO_FILE = "logo.png"  # Busca automáticamente la imagen subida a GitHub
-DESARROLLADOR_APP = "Ing. Richard Villegas"  # Tu nombre o el de tu empresa
+DESARROLLADOR_APP = "Richard Villegas Tejeda"  # Nombre de autoría actualizado
 
 st.sidebar.header("ℹ️ Información del Sistema")
 st.sidebar.markdown(f"**Desarrollado por:**\n{DESARROLLADOR_APP}")
@@ -64,9 +64,8 @@ with col_left:
     planta_area = st.text_input(
         "Ubicación / Área", value="Planta Principal - Área 200"
     )
-    tecnico_responsable = st.text_input("Técnico Inspector", value="Ing. Juan Pérez")
     supervisor_responsable = st.text_input(
-        "Aprobado / Revisado por", value="Ing. Carlos Mendoza"
+        "Aprobado / Revisado por", value="Carlos Mendoza"
     )
 
 with col_right:
@@ -287,7 +286,6 @@ def generar_pdf_bytes():
 
     if os.path.exists(LOGO_FILE):
         try:
-            # Cálculo automático de escala manteniendo aspecto original
             with PILImage.open(LOGO_FILE) as img:
                 orig_w, orig_h = img.size
                 aspect = orig_h / orig_w
@@ -295,7 +293,6 @@ def generar_pdf_bytes():
             target_w = 1.8 * inch
             target_h = target_w * aspect
 
-            # Si excede el alto máximo del header, ajustamos por altura
             if target_h > 0.75 * inch:
                 target_h = 0.75 * inch
                 target_w = target_h / aspect
@@ -338,8 +335,8 @@ def generar_pdf_bytes():
         [
             Paragraph("<b>Ubicación / Área:</b>", cell_b),
             Paragraph(planta_area, cell_n),
-            Paragraph("<b>Técnico Inspector:</b>", cell_b),
-            Paragraph(tecnico_responsable, cell_n),
+            Paragraph("<b>Aprobado / Revisado:</b>", cell_b),
+            Paragraph(supervisor_responsable, cell_n),
         ],
     ]
     t_info = Table(
@@ -435,18 +432,14 @@ def generar_pdf_bytes():
     )
     elements.append(Spacer(1, 8))
 
-    # BLOQUE DE FIRMAS
+    # BLOQUE DE FIRMA ÚNICA CENTRADA
     data_firmas = [[
-        Paragraph(
-            f"__________________________________<br/><b>{tecnico_responsable}</b><br/>Inspector Técnico",
-            cell_c,
-        ),
         Paragraph(
             f"__________________________________<br/><b>{supervisor_responsable}</b><br/>Aprobado y revisado",
             cell_c,
-        ),
+        )
     ]]
-    t_firmas = Table(data_firmas, colWidths=[3.5 * inch, 3.5 * inch])
+    t_firmas = Table(data_firmas, colWidths=[7.0 * inch])
     t_firmas.setStyle(
         TableStyle([
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),

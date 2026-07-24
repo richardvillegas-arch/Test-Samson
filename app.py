@@ -1,6 +1,7 @@
 import io
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo  # Manejo exacto de la zona horaria de Chile
 
 import matplotlib.pyplot as plt
 from PIL import Image as PILImage
@@ -329,8 +330,11 @@ def generar_pdf_bytes():
         )
     )
 
-    # DATOS DE CABECERA
-    fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+    # DATOS DE CABECERA (HORA CONFIGURADA A CHILE)
+    fecha_actual = datetime.now(ZoneInfo("America/Santiago")).strftime(
+        "%d/%m/%Y %H:%M"
+    )
+
     data_info = [
         [
             Paragraph("<b>TAG Válvula:</b>", cell_b),

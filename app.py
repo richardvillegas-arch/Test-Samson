@@ -30,9 +30,15 @@ st.set_page_config(
     layout="wide",
 )
 
+
+# --- FUNCIÓN DE FORMATO: 1 DECIMAL Y COMA DECIMAL ---
+def fmt(val):
+    return f"{val:.1f}".replace(".", ",")
+
+
 # --- ARCHIVO DE LOGO FIJO Y AUTORÍA ---
 LOGO_FILE = "logo.png"  # Busca automáticamente la imagen subida a GitHub
-DESARROLLADOR_APP = "Richard Villegas Tejeda"  # Nombre de autoría actualizado
+DESARROLLADOR_APP = "Richard Villegas Tejeda"  # Nombre de autoría
 
 st.sidebar.header("ℹ️ Información del Sistema")
 st.sidebar.markdown(f"**Desarrollado por:**\n{DESARROLLADOR_APP}")
@@ -90,7 +96,7 @@ with col_right:
         min_value=0.0,
         value=0.5,
         step=0.1,
-        format="%.3f",
+        format="%.1f",
     )
     unidad_medida = st.selectbox(
         "Unidad de Medida", ["SFH (SCFH)", "l/min", "m3/h"]
@@ -145,17 +151,17 @@ color_hex = "#16a34a" if aprobado else "#dc2626"
 # --- 4. MOSTRAR RESULTADOS EN PANTALLA ---
 if aprobado:
     st.success(
-        f"### RESULTADO: APROBADO ✅\nLa fuga medida representa el **{porcentaje_usado:.2f}%** del límite permitido."
+        f"### RESULTADO: APROBADO ✅\nLa fuga medida representa el **{fmt(porcentaje_usado)}%** del límite permitido."
     )
 else:
     st.error(
-        f"### RESULTADO: RECHAZADO ❌\nLa fuga medida supera el límite máximo permitido (**{porcentaje_usado:.2f}%**)."
+        f"### RESULTADO: RECHAZADO ❌\nLa fuga medida supera el límite máximo permitido (**{fmt(porcentaje_usado)}%**)."
     )
 
 kpi1, kpi2, kpi3 = st.columns(3)
-kpi1.metric("Fuga Medida", f"{fuga_medida:.3f} {unidad_medida}")
-kpi2.metric("Límite Permitido", f"{max_fuga_usuario:.3f} {unidad_medida}")
-kpi3.metric("Nivel respecto al Límite", f"{porcentaje_usado:.2f} %")
+kpi1.metric("Fuga Medida", f"{fmt(fuga_medida)} {unidad_medida}")
+kpi2.metric("Límite Permitido", f"{fmt(max_fuga_usuario)} {unidad_medida}")
+kpi3.metric("Nivel respecto al Límite", f"{fmt(porcentaje_usado)} %")
 
 # --- 5. GENERACIÓN DEL GRÁFICO (EN MEMORIA) ---
 fig, ax = plt.subplots(figsize=(7, 3.2), dpi=150)
@@ -173,7 +179,7 @@ bars = ax.bar(
 for bar in bars:
     h = bar.get_height()
     ax.annotate(
-        f"{h:.3f} {unidad_medida}",
+        f"{fmt(h)} {unidad_medida}",
         xy=(bar.get_x() + bar.get_width() / 2, h),
         xytext=(0, 5),
         textcoords="offset points",
@@ -400,17 +406,17 @@ def generar_pdf_bytes():
         ],
         [
             Paragraph("Fuga Máxima Permitida", cell_n),
-            Paragraph(f"{max_fuga_usuario:.3f} {unidad_medida}", cell_b),
+            Paragraph(f"{fmt(max_fuga_usuario)} {unidad_medida}", cell_b),
             Paragraph("Límite superior normativo", cell_n),
         ],
         [
             Paragraph("Fuga Medida en Prueba", cell_n),
-            Paragraph(f"<b>{fuga_medida:.3f} {unidad_medida}</b>", cell_b),
+            Paragraph(f"<b>{fmt(fuga_medida)} {unidad_medida}</b>", cell_b),
             Paragraph("Valor obtenido en banco", cell_n),
         ],
         [
             Paragraph("Nivel de Fuga (% del Límite)", cell_n),
-            Paragraph(f"{porcentaje_usado:.2f} %", cell_b),
+            Paragraph(f"{fmt(porcentaje_usado)} %", cell_b),
             Paragraph("< 100% indica aprobación", cell_n),
         ],
     ]

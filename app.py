@@ -1,9 +1,10 @@
-
 import io
 import os
 from datetime import datetime
-from zoneinfo import ZoneInfo  # Manejo exacto de la zona horaria de Chile
+from zoneinfo import ZoneInfo 
 
+import matplotlib
+matplotlib.use('Agg')  # Configuración para ejecución headless / servidores Cloud
 import matplotlib.pyplot as plt
 from PIL import Image as PILImage
 
@@ -166,7 +167,7 @@ kpi2.metric("Límite Permitido", f"{fmt(max_fuga_usuario)} {unidad_medida}")
 kpi3.metric("Nivel respecto al Límite", f"{fmt(porcentaje_usado)} %")
 
 # --- 5. GENERACIÓN DEL GRÁFICO (EN MEMORIA) ---
-fig, ax = plt.subplots(figsize=(7, 3.2), dpi=150)
+fig, ax = plt.subplots(figsize=(7, 3.6), dpi=150)
 barras = ["Fuga Medida", "Límite Máximo"]
 valores = [fuga_medida, max_fuga_usuario]
 
@@ -196,6 +197,7 @@ ax.set_title(
     f"Comparativa de Fuga vs Límite FCI 70-2 ({clase_fuga})",
     fontsize=11,
     fontweight="bold",
+    pad=15,
 )
 ax.axhline(
     max_fuga_usuario,
@@ -204,18 +206,23 @@ ax.axhline(
     linewidth=1.2,
     label="Límite Tolerado",
 )
-ax.legend(loc="upper right", fontsize=8)
 
 if 0 < fuga_medida < (max_fuga_usuario * 0.05):
     ax.set_yscale("log")
+    ax.set_ylim(bottom=fuga_medida * 0.5, top=max_fuga_usuario * 3.5)
+else:
+    ax.set_ylim(bottom=0, top=max_fuga_usuario * 1.25)
+
+ax.legend(loc="upper right", fontsize=8)
 
 plt.tight_layout()
 
 st.pyplot(fig)
 
 img_buf = io.BytesIO()
-fig.savefig(img_buf, format="png", dpi=200)
+fig.savefig(img_buf, format="png", dpi=200, bbox_inches="tight")
 img_buf.seek(0)
+plt.close(fig)
 
 
 # --- 6. FUNCIÓN PARA GENERAR EL PDF EN MEMORIA ---
